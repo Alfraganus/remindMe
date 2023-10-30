@@ -1,15 +1,6 @@
-from models.UserResponse import UserResponse
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
+from modules.auth.SignUp import userModel
 
-from config.db import conn
-from models.Users import users
 app = FastAPI()
+app.include_router(userModel)
 
-@app.get("/")
-async def start():
-    return {"text": "hello world"}
-
-@app.get("/users",response_model=list[UserResponse])
-async  def  readData():
-    res = conn.execute(users.select()).fetchall()
-    return res
