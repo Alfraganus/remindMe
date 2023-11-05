@@ -1,15 +1,19 @@
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError
+from starlette import status
 from config import params
 import jwt
 from fastapi import APIRouter, HTTPException, Depends
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from config.db import MongoDBConnection
+from modules.auth import schemes
 from modules.auth.models.UserRegister import UserRegistration
 
 appAuth = APIRouter();
 authCollection = MongoDBConnection().college
 users_collection = authCollection.get_collection("users")
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
 class UserLogin(BaseModel):
     username: str
     password: str
@@ -45,6 +49,38 @@ async def register(user_registration: UserRegistration):
     result = await users_collection.insert_one(user_data)
     return {"user_id": str(result.inserted_id), "username": user_registration.username}
 
+
+
+def verify_access_token(token:str, credentials_exception) :
+    try:
+
+        payload = jwt.decode(token,params.configs.get("SECRET_KEY"),algorithms=[params.configs.get("ALGORITHM")])
+        id: str = payload.get("sub")
+        print(payload)
+        if id is None:
+            raise credentials_exception
+        token_Data = schemes.TokenData(id=id)
+        print(token_Data)
+    except JWTError as e:
+        print(e)
+        raise credentials_exception
+    except AssertionError as e:
+        print(e)
+    return token_Data
+
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)) :
+    credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                         detail="count not validate",headers={"WWW-Authenticate": "Bearer"})
+    token = verify_access_token(token,credential_exception)
+    user = await users_collection.find_one({"username": token.id})
+    return user
+
+
 @appAuth.get("/hello", tags=["authentication"])
-async def hello_world(secure: bool = Depends(logn_for_access_token)):
+async def hello_world(user_id = Depends(get_current_user)):
     return {"message": "Hello, World!"}
+
+
+
