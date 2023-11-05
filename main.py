@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from modules.auth.SignUp import userModel
+from modules.auth.services.AuthService import appAuth
 
 app = FastAPI()
-app.include_router(userModel)
+app.include_router(appAuth)
 

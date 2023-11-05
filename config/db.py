@@ -1,6 +1,11 @@
-from sqlalchemy import create_engine, MetaData
+import motor.motor_asyncio
+from config import params
 
-# engine = create_engine("mysql://root:@localhost/remind_me")
-engine = create_engine("mysql://root:@localhost/remind_me")
-meta = MetaData()
-conn = engine.connect()
+class MongoDBConnection:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(MongoDBConnection, cls).__new__(cls)
+            cls._instance.client = motor.motor_asyncio.AsyncIOMotorClient(params.configs.get("MONGO_DB_URL"))
+        return cls._instance.client
