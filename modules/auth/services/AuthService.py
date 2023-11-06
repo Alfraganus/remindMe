@@ -1,5 +1,7 @@
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.params import Form
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError
+from pydantic.typing import Annotated
 from starlette import status
 from config import params
 import jwt
@@ -13,10 +15,7 @@ from modules.auth.models.UserRegister import UserRegistration
 appAuth = APIRouter();
 authCollection = MongoDBConnection().college
 users_collection = authCollection.get_collection("users")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
-class UserLogin(BaseModel):
-    username: str
-    password: str
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 class TokenData(BaseModel):
     username: str | None = None
@@ -26,6 +25,9 @@ password_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
 def create_access_token(data: dict):
     return jwt.encode(data.copy(), params.configs.get("SECRET_KEY"), algorithm=params.configs.get("ALGORITHM"))
 
+class UserLogin(BaseModel):
+    username: str = Form(...)
+    password: str = Form(...)
 
 @appAuth.post("/login", tags=["authentication"])
 async def logn_for_access_token(user_login: UserLogin):
@@ -33,10 +35,22 @@ async def logn_for_access_token(user_login: UserLogin):
     if user is None or not password_context.verify(user_login.password, user.get("password_hash")):
         raise HTTPException(status_code=400, detail="Incorrect password")
     return {
-        "access_token":create_access_token({"sub": user["username"]}),
+        "access_token":create_access_token({"username": user["username"]}),
         "token_type": "bearer"
     }
 
+# working one
+@appAuth.post("/token")
+async def token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+):
+    user = await users_collection.find_one({"username": form_data.username})
+    if user is None or not password_context.verify(form_data.password, user.get("password_hash")):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+    return {
+        "access_token": create_access_token({"username": user["username"]}),
+        "token_type": "bearer"
+    }
 
 @appAuth.post("/register", tags=["authentication"])
 async def register(user_registration: UserRegistration):
@@ -53,9 +67,8 @@ async def register(user_registration: UserRegistration):
 
 def verify_access_token(token:str, credentials_exception) :
     try:
-
         payload = jwt.decode(token,params.configs.get("SECRET_KEY"),algorithms=[params.configs.get("ALGORITHM")])
-        id: str = payload.get("sub")
+        id: str = payload.get("username")
         print(payload)
         if id is None:
             raise credentials_exception
@@ -72,7 +85,8 @@ def verify_access_token(token:str, credentials_exception) :
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) :
     credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                         detail="count not validate",headers={"WWW-Authenticate": "Bearer"})
+                                         detail="count not validate",
+                                         headers={"WWW-Authenticate": "Bearer"})
     token = verify_access_token(token,credential_exception)
     user = await users_collection.find_one({"username": token.id})
     return user
