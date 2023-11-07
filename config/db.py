@@ -15,7 +15,7 @@ class MongoDBConnection:
         """
         Get the MongoDB database instance.
         """
-        return MongoDBConnection()._instance.client[params.configs.get("DB")]
+        return MongoDBConnection().remindMe
 
     @staticmethod
     def get_collection(collection_name: str) :
