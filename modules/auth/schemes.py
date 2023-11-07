@@ -10,3 +10,10 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: Optional[str] = None
+
+class UserRegistration(BaseModel):
+    username: str
+    password: str
+    fullname: str
+    address: str
+

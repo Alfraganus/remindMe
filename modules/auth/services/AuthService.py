@@ -1,19 +1,16 @@
 from fastapi.params import Form
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
-from pydantic.typing import Annotated
 from starlette import status
 from config import params
 import jwt
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import HTTPException, Depends
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from config.db import MongoDBConnection
 from modules.auth import schemes
-from modules.auth.models.UserRegister import UserRegistration
 
-appAuth = APIRouter();
-authCollection = MongoDBConnection().college
+authCollection = MongoDBConnection().remindMe
 users_collection = authCollection.get_collection("users")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
@@ -28,41 +25,6 @@ def create_access_token(data: dict):
 class UserLogin(BaseModel):
     username: str = Form(...)
     password: str = Form(...)
-
-@appAuth.post("/login", tags=["authentication"])
-async def logn_for_access_token(user_login: UserLogin):
-    user = await users_collection.find_one({"username": user_login.username})
-    if user is None or not password_context.verify(user_login.password, user.get("password_hash")):
-        raise HTTPException(status_code=400, detail="Incorrect password")
-    return {
-        "access_token":create_access_token({"username": user["username"]}),
-        "token_type": "bearer"
-    }
-
-# working one
-@appAuth.post("/token")
-async def token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
-):
-    user = await users_collection.find_one({"username": form_data.username})
-    if user is None or not password_context.verify(form_data.password, user.get("password_hash")):
-        raise HTTPException(status_code=400, detail="Incorrect password")
-    return {
-        "access_token": create_access_token({"username": user["username"]}),
-        "token_type": "bearer"
-    }
-
-@appAuth.post("/register", tags=["authentication"])
-async def register(user_registration: UserRegistration):
-    if await users_collection.find_one({"username": user_registration.username}):
-        raise HTTPException(status_code=400, detail="Username already registered")
-    user_data = {
-        "username": user_registration.username,
-        "password_hash": password_context.hash(user_registration.password)
-    }
-    result = await users_collection.insert_one(user_data)
-    return {"user_id": str(result.inserted_id), "username": user_registration.username}
-
 
 
 def verify_access_token(token:str, credentials_exception) :
@@ -90,11 +52,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) :
     token = verify_access_token(token,credential_exception)
     user = await users_collection.find_one({"username": token.id})
     return user
-
-
-@appAuth.get("/hello", tags=["authentication"])
-async def hello_world(user_id = Depends(get_current_user)):
-    return {"message": "Hello, World!"}
 
 
 
