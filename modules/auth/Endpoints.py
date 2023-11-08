@@ -44,8 +44,3 @@ async def logn_for_access_token(user_login: UserLogin):
     }
 
 
-@appAuth.get("/hello", tags=["authentication"])
-async def hello_world(user_id = Depends(get_current_user)):
-    return {"message": "Hello, World!"}
-
-

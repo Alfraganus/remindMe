@@ -18,7 +18,6 @@ class TokenData(BaseModel):
     username: str | None = None
 
 password_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
-
 def create_access_token(data: dict):
     return jwt.encode(data.copy(), params.configs.get("SECRET_KEY"), algorithm=params.configs.get("ALGORITHM"))
 
