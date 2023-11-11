@@ -7,7 +7,7 @@ class MongoDBConnection:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(MongoDBConnection, cls).__new__(cls)
-            cls._instance.client = motor.motor_asyncio.AsyncIOMotorClient(params.configs.get("MONGO_DB_URL"))
+            cls._instance.client = motor.motor_asyncio.AsyncIOMotorClient(params.configs.get("MONGO_DB_URL_ATLAS"))
         return cls._instance.client
 
     @staticmethod
