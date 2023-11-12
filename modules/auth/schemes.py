@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, Field
-from pydantic.fields import List, Dict
 
 from modules.todo.services.ScheduleService import options
 
