@@ -1,6 +1,6 @@
 from fastapi import HTTPException, Depends, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
-from typing import Annotated
+from pydantic.typing import Annotated
 from modules.auth.schemes import UserRegistration
 from modules.auth.services.AuthService import users_collection, UserLogin, password_context, create_access_token, \
     get_current_user
