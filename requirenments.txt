@@ -1,4 +1,14 @@
 fastapi
 uvicorn[standart]
-sqlalchemy
-sqlalchemy alembic
+cd bnannotated-types==0.6.0
+anyio
+distlib
+pydantic
+pydantic_core
+python-jose
+rsa
+six
+sniffio
+starlette
+typing_extensions
+uvicorn==0.24.0.post1
