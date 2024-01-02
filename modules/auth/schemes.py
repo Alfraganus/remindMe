@@ -30,4 +30,12 @@ class SoloToDo(BaseModel):
     notifyTime : datetime
     scheduler : Scheduler
 
+class Notification(BaseModel):
+    color: str = Field(max_length=100)
+    title : str = Field(max_length=200)
+    is_everyday : str = Field(max_length=50)
+    oraliq_dates : List[str] = Field([])
+    week_days : List[str] = Field([])
+    times : List[str] = Field([])
+
 
